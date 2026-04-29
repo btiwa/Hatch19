@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hatch & Gear DZ - Pro Cloud</title>
+    <style>
+        :root {
+            --bg: #0f172a; --card: #1e293b; --primary: #3b82f6; --success: #10b981;
+            --danger: #ef4444; --warning: #f59e0b; --text: #f1f5f9; --sub: #94a3b8;
+            --border: #334155; --input: #0f172a;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 10px; line-height: 1.4; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: var(--card); padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
+        .nav { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .nav-btn { padding: 10px 15px; border: 1px solid var(--border); background: var(--card); border-radius: 8px; cursor: pointer; color: var(--sub); white-space: nowrap; font-size: 13px; font-weight: 600; }
+        .nav-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .panel { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; overflow: hidden; }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { background: rgba(0,0,0,0.2); padding: 10px; text-align: right; color: var(--sub); font-size: 12px; }
+        td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 15px; }
+        @media (min-width: 600px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        label { font-size: 12px; color: var(--sub); }
+        input, select, textarea { padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--input); color: white; font-size: 14px; outline: none; }
+
+        .actions { display: flex; gap: 12px; }
+        .btn-act { cursor: pointer; font-weight: bold; font-size: 14px; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; padding: 10px; }
+        .modal-content { background: var(--card); padding: 20px; border-radius: 12px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .hidden { display: none; }
+        .page { display: none; } .page.active { display: block; }
+        code { color: var(--primary); background: #000; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1 style="font-size:18px; color:var(--primary)">HATCH & GEAR DZ</h1>
+        <span id="sync-status" style="font-size:10px; color:var(--success)">● متصل بالسحابة</span>
+    </div>
+
+    <nav class="nav">
+        <button class="nav-btn active" onclick="showPage('main', this)">الطلبات</button>
+        <button class="nav-btn" onclick="showPage('add', this)">+ طلب جديد</button>
+        <button class="nav-btn" onclick="showPage('done', this)">الأرشيف</button>
+    </nav>
+
+    <div id="pg-main" class="page active">
+        <div class="panel">
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>الزبون</th><th>الولاية/البلدية</th><th>المنتج</th><th>إجراء</th></tr></thead>
+                    <tbody id="main-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="pg-add" class="page">
+        <div class="panel">
+            <div class="form-grid">
+                <div class="field"><label>اسم الزبون</label><input type="text" id="f-name"></div>
+                <div class="field"><label>الهاتف</label><input type="tel" id="f-phone"></div>
+                <div class="field"><label>الولاية</label><select id="f-wilaya"></select></div>
+                <div class="field"><label>نوع التوصيل</label>
+                    <select id="f-deliv" onchange="toggleB(this.value, 'f-b-box')">
+                        <option value="office">مكتب</option>
+                        <option value="home">للبيت</option>
+                    </select>
+                </div>
+                <div id="f-b-box" class="field hidden"><label>البلدية</label><input type="text" id="f-baladia"></div>
+                <div class="field"><label>رمز التتبع</label><input type="text" id="f-track"></div>
+                <div class="field"><label>المنتج</label>
+                    <select id="f-type"><option value="auto">أوتوماتيكية</option><option value="manual">يدوية</option></select>
+                </div>
+                <div class="field"><label>السعر</label><input type="number" id="f-price" value="10000"></div>
+                <div class="field" style="grid-column:1/-1"><label>ملاحظات</label><textarea id="f-note" rows="2"></textarea></div>
+            </div>
+            <div style="padding:15px"><button class="btn-save" id="add-btn" onclick="addOrder()">حفظ الطلب في الكلاود</button></div>
+        </div>
+    </div>
+
+    <div id="pg-done" class="page">
+        <div class="panel"><div class="table-container"><table><tbody id="done-tbody"></tbody></table></div></div>
+    </div>
+</div>
+
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-bottom:15px">تعديل الطلبية</h3>
+        <input type="hidden" id="e-id">
+        <div class="form-grid" style="padding:0">
+            <div class="field"><label>الاسم</label><input type="text" id="e-name"></div>
+            <div class="field"><label>الولاية</label><select id="e-wilaya"></select></div>
+            <div class="field"><label>التوصيل</label>
+                <select id="e-deliv" onchange="toggleB(this.value, 'e-b-box')">
+                    <option value="office">مكتب</option>
+                    <option value="home">للبيت</option>
+                </select>
+            </div>
+            <div id="e-b-box" class="field hidden"><label>البلدية</label><input type="text" id="e-baladia"></div>
+            <div class="field"><label>التتبع</label><input type="text" id="e-track" readonly style="background:#334155"></div>
+            <div class="field"><label>السعر</label><input type="number" id="e-price"></div>
+            <div class="field" style="grid-column:1/-1"><label>ملاحظة</label><textarea id="e-note"></textarea></div>
+        </div>
+        <button class="btn-save" id="upd-btn" onclick="updateOrder()">تحديث في الكلاود</button>
+        <button onclick="closeM()" style="width:100%; background:none; border:none; color:var(--sub); margin-top:10px">إلغاء</button>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5nBKc279Um9X9Hiw5INOZqZVJqjBWoc2zVkeUUkAlKMNPNL4yqi3q1_JgfTILRzlaZQ/exec';
+    const STORAGE_KEY = 'hatch_gear_v8';
+    const WILAYAS = ["01-أدرار","02-الشلف","03-الأغواط","04-أم البواقي","05-باتنة","06-بجاية","07-بسكرة","08-بشار","09-البليدة","10-البويرة","11-تمنراست","12-تبسة","13-تلمسان","14-تيارت","15-تيزي وزو","16-الجزائر","17-الجلفة","18-جيجل","19-سطيف","20-سعيدة","21-سكيكدة","22-سيدي بلعباس","23-عنابة","24-قالمة","25-قسنطينة","26-المدية","27-مستغانم","28-المسيلة","29-معسكر","30-ورقلة","31-وهران","32-البيض","33-إليزي","34-برج بوعريريج","35-بومرداس","36-الطارف","37-تندوف","38-تيسمسيلت","39-الوادي","40-خنشلة","41-سوق أهراس","42-تيبازة","43-ميلة","44-عين الدفلى","45-النعامة","46-عين تموشنت","47-غرداية","48-غليزان","49-تيميمون","50-برج باجي مختار","51-أولاد جلال","52-بني عباس","53-عين صالح","54-عين قزام","55-تقرت","56-جانت","57-المغير","58-المنيعة","59-آفلو","60-بريكة","61-القنطرة","62-بئر العاتر","63-العريشة","64-قصر الشلالة","65-عين وسارة","66-مسعد","67-قصر البخاري","68-بوسعادة","69-الأبيض سيدي الشيخ"];
+
+    let D = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { orders: [] };
+
+    function init() {
+        const html = WILAYAS.map(w => `<option value="${w}">${w}</option>`).join('');
+        document.getElementById('f-wilaya').innerHTML = html;
+        document.getElementById('e-wilaya').innerHTML = html;
+        renderMain();
+    }
+
+    function toggleB(v, id) { document.getElementById(id).classList.toggle('hidden', v !== 'home'); }
+    function closeM() { document.getElementById('editModal').style.display = 'none'; }
+
+    function showPage(id, btn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('pg-' + id).classList.add('active');
+        btn.classList.add('active');
+        id === 'main' ? renderMain() : id === 'done' ? renderDone() : null;
+    }
+
+    async function sync(action, data) {
+        document.getElementById('sync-status').innerText = '⏳ جاري المزامنة...';
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST', mode: 'no-cors',
+                body: JSON.stringify({ ...data, action: action })
+            });
+            document.getElementById('sync-status').innerText = '● متصل بالسحابة';
+        } catch (e) { document.getElementById('sync-status').innerText = '● وضع الأوفلاين'; }
+    }
+
+    async function addOrder() {
+        const btn = document.getElementById('add-btn');
+        const o = {
+            id: Date.now(), date: new Date().toLocaleDateString('ar-DZ'),
+            name: document.getElementById('f-name').value, phone: document.getElementById('f-phone').value,
+            wilaya: document.getElementById('f-wilaya').value, deliv: document.getElementById('f-deliv').value,
+            baladia: document.getElementById('f-baladia').value || '-', track: document.getElementById('f-track').value,
+            price: document.getElementById('f-price').value, type: document.getElementById('f-type').value,
+            note: document.getElementById('f-note').value, status: 'active'
+        };
+        if(!o.name || !o.track) return alert("أدخل الاسم ورمز التتبع");
+        btn.disabled = true;
+        D.orders.unshift(o); save();
+        await sync('create', o);
+        btn.disabled = false;
+        showPage('main', document.querySelector('.nav-btn'));
+    }
+
+    function renderMain() {
+        const b = document.getElementById('main-tbody'); b.innerHTML = '';
+        D.orders.filter(o => o.status === 'active').forEach(o => {
+            b.innerHTML += `<tr>
+                <td><b>${o.name}</b><br><code>${o.track}</code></td>
+                <td>${o.wilaya}<br><small>${o.deliv==='home'?'🏠 '+o.baladia:'🏢 مكتب'}</small></td>
+                <td>${o.type==='auto'?'أوتو':'يدوي'}</td>
+                <td><div class="actions">
+                    <span class="btn-act" style="color:var(--success)" onclick="updStat(${o.id}, 'done')">✓</span>
+                    <span class="btn-act" style="color:var(--warning)" onclick="openE(${o.id})">✎</span>
+                    <span class="btn-act" style="color:var(--danger)" onclick="delO(${o.id})">✕</span>
+                </div></td>
+            </tr>`;
+        });
+    }
+
+    function renderDone() {
+        const b = document.getElementById('done-tbody'); b.innerHTML = '';
+        D.orders.filter(o => o.status === 'done').forEach(o => {
+            b.innerHTML += `<tr>
+                <td>${o.name}<br><code>${o.track}</code></td>
+                <td>${o.wilaya}</td>
+                <td>${o.price} دج</td>
+                <td><span class="btn-act" style="color:var(--danger)" onclick="delO(${o.id})">حذف</span></td>
+            </tr>`;
+        });
+    }
+
+    function openE(id) {
+        const o = D.orders.find(x => x.id === id);
+        document.getElementById('e-id').value = o.id;
+        document.getElementById('e-name').value = o.name;
+        document.getElementById('e-wilaya').value = o.wilaya;
+        document.getElementById('e-deliv').value = o.deliv;
+        document.getElementById('e-baladia').value = o.baladia;
+        document.getElementById('e-track').value = o.track;
+        document.getElementById('e-price').value = o.price;
+        document.getElementById('e-note').value = o.note || '';
+        toggleB(o.deliv, 'e-b-box');
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    async function updateOrder() {
+        const btn = document.getElementById('upd-btn');
+        const id = parseInt(document.getElementById('e-id').value);
+        const o = D.orders.find(x => x.id === id);
+        o.name = document.getElementById('e-name').value;
+        o.wilaya = document.getElementById('e-wilaya').value;
+        o.deliv = document.getElementById('e-deliv').value;
+        o.baladia = document.getElementById('e-baladia').value;
+        o.price = document.getElementById('e-price').value;
+        o.note = document.getElementById('e-note').value;
+        btn.disabled = true;
+        save(); await sync('update', o);
+        btn.disabled = false; closeM(); renderMain();
+    }
+
+    async function delO(id) {
+        if(confirm("حذف نهائي من الهاتف ومن شيتس؟")) {
+            const o = D.orders.find(x => x.id === id);
+            D.orders = D.orders.filter(x => x.id !== id);
+            save(); renderMain(); renderDone();
+            await sync('delete', { track: o.track });
+        }
+    }
+
+    async function updStat(id, s) {
+        const o = D.orders.find(x => x.id === id);
+        o.status = s; save(); renderMain();
+        await sync('update', o);
+    }
+
+    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(D)); }
+    init();
+</script>
+</body>
+</html>
