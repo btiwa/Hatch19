@@ -524,7 +524,7 @@ function renderMain(){
     const orders=filterOrders(D.orders.filter(o=>o.status==='active'));
     if(!orders.length){b.innerHTML=emptyRow('لا توجد طلبيات نشطة');return;}
     b.innerHTML=orders.map(o=>{const d=daysSince(o.date);return`<tr class="${d>7?'alert-row':''}">
-        <td><b>${o.name}</b><br><code style="font-size:10px">${o.track}</code>${o.phone?`<br><small style="color:var(--sub)">${o.phone}</small>`:''}</td>
+        <td><b>${o.name}</b><br><code style="font-size:10px">${o.track}</code>${o.phone?`<br><small style="color:var(--sub)">${o.phone}</small>`:''}${o.note?`<br><small style="color:var(--warning);font-style:italic">📝 ${o.note}</small>`:''}</td>
         <td style="font-size:11px">${o.wilaya}</td>
         <td>${o.type==='auto'?'⚙ أوتو':'🔧 يدوي'}</td>
         <td>${Number(o.price).toLocaleString()} دج</td>
