@@ -330,8 +330,8 @@ function getSheet() {
   let s = ss.getSheetByName(SHEET_NAME);
   if (!s) {
     s = ss.insertSheet(SHEET_NAME);
-    s.appendRow(['id','date','name','phone','wilaya','deliv','baladia','track','price','type','note','status']);
-    s.getRange(1,1,1,12).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('white');
+    s.appendRow(['id','date','name','phone','wilaya','deliv','baladia','track','price','type','note','status','customProfit','paid']);
+    s.getRange(1,1,1,14).setFontWeight('bold').setBackground('#1a1a2e').setFontColor('white');
   }
   return s;
 }
@@ -702,8 +702,10 @@ async function addOrder(){
 
 async function togglePaid(id){
     const o=D.orders.find(x=>x.id===id);if(!o)return;
-    o.paid=!o.paid;save();renderAll();
-    await cloudSync('update',o);
+    o.paid=!o.paid;
+    const syncObj={...o,paid:o.paid?'TRUE':'FALSE'};
+    save();renderAll();
+    await cloudSync('update',syncObj);
     toast(o.paid?'✅ تم تسجيل الدفع — خُصم من الأرباح':'↩ تم إلغاء الدفع — أُضيف للأرباح','success');
 }
 
@@ -778,7 +780,7 @@ async function fetchFromCloud(){
         const res=await fetch(SCRIPT_URL+'?action=read&t='+Date.now());
         const data=await res.json();
         if(Array.isArray(data)){
-            D.orders=data.map(o=>({...o,id:Number(o.id),price:Number(o.price)}));
+            D.orders=data.map(o=>({...o,id:Number(o.id),price:Number(o.price),customProfit:o.customProfit!==''&&o.customProfit!==undefined?Number(o.customProfit):undefined,paid:o.paid===true||o.paid==='TRUE'||o.paid==='true'||o.paid===1}));
             save();renderAll();
             st.innerText=`● متصل — ${data.length} طلبية`;st.style.color='var(--success)';
             toast(`✅ تم جلب ${data.length} طلبية من الكلاود`,'success');
