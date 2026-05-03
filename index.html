@@ -716,9 +716,10 @@ async function updateProfit(id){
     const cost=o.type==='auto'?10000:6000;
     const defaultProfit=Number(o.price)-cost;
     const oldProfit=o.customProfit!==undefined?Number(o.customProfit):defaultProfit;
-    if(newVal===oldProfit)return;
+    if(newVal===oldProfit&&o.customProfit!==undefined)return;
     o.customProfit=newVal;save();renderAll();
-    await cloudSync('update',o);
+    const syncObj={...o,customProfit:newVal};
+    await cloudSync('update',syncObj);
     toast(`📝 تغير الربح: ${oldProfit.toLocaleString()} ← ${newVal.toLocaleString()} دج`,'success');
 }
 
@@ -765,7 +766,8 @@ async function cloudSync(action,data){
     const st=document.getElementById('sync-status');
     st.innerText='⏳ مزامنة...';st.style.color='var(--warning)';
     try{
-        await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({...data,action})});
+        const clean=JSON.parse(JSON.stringify({...data,action}));
+        await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(clean)});
         st.innerText='● متصل بالكلاود';st.style.color='var(--success)';
     }catch{st.innerText='● أوفلاين';st.style.color='var(--danger)';}
 }
