@@ -198,7 +198,7 @@
                 <button class="btn-action btn-edit" onclick="exportExcel('active')">📥 Excel</button>
             </div>
             <div class="table-container"><table>
-                <thead><tr><th>الزبون / التتبع</th><th>الولاية</th><th>النوع</th><th>السعر</th><th>الأيام</th><th>إجراءات</th></tr></thead>
+                <thead><tr><th>الزبون / التتبع</th><th>الولاية</th><th>النوع</th><th>السعر</th><th>الأيام</th><th>ملاحظات</th><th>إجراءات</th></tr></thead>
                 <tbody id="main-tbody"></tbody>
             </table></div>
         </div>
@@ -529,6 +529,7 @@ function renderMain(){
         <td>${o.type==='auto'?'⚙ أوتو':'🔧 يدوي'}</td>
         <td>${Number(o.price).toLocaleString()} دج</td>
         <td>${daysBadge(d)}</td>
+        <td style="min-width:140px"><textarea id="note-${o.id}" rows="2" style="width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:6px;background:var(--input);color:var(--text);font-size:11px;resize:vertical;outline:none;transition:border-color .2s" placeholder="أضف ملاحظة..." onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">${o.note||''}</textarea><button class="btn-action btn-done" style="margin-top:3px;width:100%;font-size:10px" onclick="saveNote(${o.id})">💾 حفظ</button></td>
         <td><div class="btn-actions">
             <button class="btn-action btn-ship" onclick="moveOrder(${o.id},'shipping')">🚚 شحن</button>
             <button class="btn-action btn-edit" onclick="openEdit(${o.id})">✎</button>
@@ -700,6 +701,14 @@ async function addOrder(){
     showPage('main',document.querySelector('.nav-btn'));
 }
 
+async function saveNote(id){
+    const o=D.orders.find(x=>x.id===id);if(!o)return;
+    const val=document.getElementById('note-'+id).value.trim();
+    o.note=val;save();
+    await cloudSync('update',o);
+    toast('📝 تم حفظ الملاحظة','success');
+}
+
 async function togglePaid(id){
     const o=D.orders.find(x=>x.id===id);if(!o)return;
     o.paid=!o.paid;
@@ -726,7 +735,11 @@ async function updateProfit(id){
 async function moveOrder(id,status){
     const o=D.orders.find(x=>x.id===id);if(!o)return;
     o.status=status;save();renderAll();
-    await cloudSync('update',o);
+    const cost=o.type==='auto'?10000:6000;
+    const defaultProfit=Number(o.price)-cost;
+    const profit=o.customProfit!==undefined&&o.customProfit!==''?Number(o.customProfit):defaultProfit;
+    const syncObj={...o,profit};
+    await cloudSync('update',syncObj);
     const labels={active:'نشطة',shipping:'في الطريق',done:'وصلت',retour:'رتور'};
     toast(`✅ نُقلت إلى: ${labels[status]||status}`,'success');
 }
